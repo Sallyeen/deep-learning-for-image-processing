@@ -30,6 +30,8 @@
 - **YOLOv2** 链接: https://pan.baidu.com/s/132aW1e_NYbaxxGi3cDVLYg  密码: tak7
 - **YOLOv3** 链接：https://pan.baidu.com/s/1hZqdgh7wA7QeGAYTttlVOQ  密码：5ulo
 - **YOLOv3SPP** 链接: https://pan.baidu.com/s/15LRssnPez9pn6jRpW89Wlw  密码: nv9f
+- **YOLOv4** 链接：https://pan.baidu.com/s/1Ltw4v1pg0eZNFYR2ZBbZmQ  密码：qjx4
+- **YOLOv5** 链接：https://pan.baidu.com/s/1rnvjwHLvOlJ9KpJ5z95GWw  密码：kt04
 - **Calculate mAP** 链接: https://pan.baidu.com/s/1jdA_n78J7nSUoOg6TTO5Bg  密码: eh62
 - **coco数据集简介** 链接：https://pan.baidu.com/s/1HfCvjt-8o9j5a916IYNVjw  密码：6rec 
 
@@ -42,3 +44,7 @@
 - **DeepLab V1** 链接：https://pan.baidu.com/s/1NFxb7ADQOMVYLxmIKqTONQ  密码：500s
 - **DeepLab V2** 链接：https://pan.baidu.com/s/1woe3lJYBVkOdnn6XXlKf8g 密码：76ec
 - **DeepLab V3** 链接：https://pan.baidu.com/s/1WVBgc2Ld13D0_dkHGwhTpA 密码：m54m
+
+
+## 实例分割
+- **Mask R-CNN** 链接：https://pan.baidu.com/s/1JpQ7ENEv_x9A1-O_NpjwYA 密码：1t4i
