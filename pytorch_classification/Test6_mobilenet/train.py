@@ -69,7 +69,7 @@ def main():
     # download url: https://download.pytorch.org/models/mobilenet_v2-b0353104.pth
     model_weight_path = "./mobilenet_v3_large-8738ca79.pth"
     assert os.path.exists(model_weight_path), "file {} dose not exist.".format(model_weight_path)
-    pre_weights = torch.load(model_weight_path, map_location=device)
+    pre_weights = torch.load(model_weight_path, map_location='cpu')
 
     # delete classifier weights
     # 官方权重文件对应的是imagenet1000分类的，所以要遍历权重，只保存不是classifier的权重

@@ -95,6 +95,7 @@
   * YOLO Series (已完成)
     * [YOLO系列网络讲解(V1~V3)](https://www.bilibili.com/video/BV1yi4y1g7ro)
     * [YOLOV4网络讲解](https://b23.tv/WLptQ7Q)
+    * [YOLOV5网络讲解](https://www.bilibili.com/video/BV1T3411p7zR)
     * [YOLOv3 SPP源码解析(Pytorch版)](https://www.bilibili.com/video/BV1t54y1C7ra)
 
 * 语义分割 
@@ -115,6 +116,11 @@
   * U-Net (已完成)
     * [U-Net网络讲解](https://www.bilibili.com/video/BV1Vq4y127fB/)
     * [U-Net源码解析(Pytorch版)](https://b23.tv/PCJJmqN)
+
+* 实例分割
+  * Mask R-CNN（进行中）
+    * [Mask R-CNN网络讲解](https://www.bilibili.com/video/BV1ZY411774T)
+    * [Mask R-CNN源码解析(Pytorch版)](https://www.bilibili.com/video/BV1hY411E7wD)
 
 **[更多相关视频请进入我的bilibili频道查看](https://space.bilibili.com/18161609/channel/index)**
 
