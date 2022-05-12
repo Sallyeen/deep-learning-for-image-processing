@@ -115,10 +115,12 @@ def plot_class_preds(net,
                      transform,
                      num_plot: int = 5,
                      device="cpu"):
+    # 检查图像路径是否存在
     if not os.path.exists(images_dir):
         print("not found {} path, ignore add figure.".format(images_dir))
         return None
 
+    # 检查图像路径下是否有label.txt文件
     label_path = os.path.join(images_dir, "label.txt")
     if not os.path.exists(label_path):
         print("not found {} file, ignore add figure".format(label_path))
@@ -130,19 +132,19 @@ def plot_class_preds(net,
     json_file = open(json_label_path, 'r')
     # {"0": "daisy"}
     flower_class = json.load(json_file)
-    # {"daisy": "0"}
+    # {"daisy": "0"}，遍历json文件，将标签的两种信息对调
     class_indices = dict((v, k) for k, v in flower_class.items())
 
     # reading label.txt file
     label_info = []
     with open(label_path, "r") as rd:
         for line in rd.readlines():
-            line = line.strip()
-            if len(line) > 0:
-                split_info = [i for i in line.split(" ") if len(i) > 0]
+            line = line.strip() # 去除首尾空格、换行符
+            if len(line) > 0: # 条件满足，说明不是空行，说明有信息
+                split_info = [i for i in line.split(" ") if len(i) > 0] # 按空格分隔，保存长度>0的信息
                 assert len(split_info) == 2, "label format error, expect file_name and class_name"
                 image_name, class_name = split_info
-                image_path = os.path.join(images_dir, image_name)
+                image_path = os.path.join(images_dir, image_name) # 拼接，得到图像完整地址
                 # 如果文件不存在，则跳过
                 if not os.path.exists(image_path):
                     print("not found {}, skip.".format(image_path))
@@ -157,7 +159,7 @@ def plot_class_preds(net,
         return None
 
     # get first num_plot info
-    if len(label_info) > num_plot:
+    if len(label_info) > num_plot: # 若大于5，则绘制前5张
         label_info = label_info[:num_plot]
 
     num_imgs = len(label_info)
@@ -173,7 +175,7 @@ def plot_class_preds(net,
         images.append(img)
         labels.append(label_index)
 
-    # batching images
+    # batching images， stack会增加一个新的维度
     images = torch.stack(images, dim=0).to(device)
 
     # inference
@@ -183,7 +185,7 @@ def plot_class_preds(net,
         probs = probs.cpu().numpy()
         preds = preds.cpu().numpy()
 
-    # width, height
+    # width, height，高宽为figsize*dpi
     fig = plt.figure(figsize=(num_imgs * 2.5, 3), dpi=100)
     for i in range(num_imgs):
         # 1：子图共1行，num_imgs:子图共num_imgs列，当前绘制第i+1个子图

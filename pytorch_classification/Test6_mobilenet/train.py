@@ -7,16 +7,18 @@ import torch.nn as nn
 import torch.optim as optim
 from torchvision import transforms, datasets
 from tqdm import tqdm
+from torch.utils.tensorboard import SummaryWriter
 
-from model_v2 import MobileNetV2
+from model_v3 import mobilenet_v3_large
 
 
 def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print("using {} device.".format(device))
 
+    writer = SummaryWriter('runs/experiment_1')
     batch_size = 16
-    epochs = 5
+    epochs = 20
 
     data_transform = {
         "train": transforms.Compose([transforms.RandomResizedCrop(224),
@@ -28,8 +30,8 @@ def main():
                                    transforms.ToTensor(),
                                    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])}
 
-    data_root = os.path.abspath(os.path.join(os.getcwd(), "../.."))  # get data root path
-    image_path = os.path.join(data_root, "data_set", "flower_data")  # flower data set path
+    data_root = os.path.abspath("/home/gw00243982/gj/a02_code/data")  # get data root path
+    image_path = os.path.join(data_root, "flower_data")  # flower data set path
     assert os.path.exists(image_path), "{} path does not exist.".format(image_path)
     train_dataset = datasets.ImageFolder(root=os.path.join(image_path, "train"),
                                          transform=data_transform["train"])
@@ -61,17 +63,18 @@ def main():
                                                                            val_num))
 
     # create model
-    net = MobileNetV2(num_classes=5)
+    net = mobilenet_v3_large(num_classes=5)
 
     # load pretrain weights
     # download url: https://download.pytorch.org/models/mobilenet_v2-b0353104.pth
-    model_weight_path = "./mobilenet_v2.pth"
+    model_weight_path = "./mobilenet_v3_large-8738ca79.pth"
     assert os.path.exists(model_weight_path), "file {} dose not exist.".format(model_weight_path)
     pre_weights = torch.load(model_weight_path, map_location=device)
 
     # delete classifier weights
+    # 官方权重文件对应的是imagenet1000分类的，所以要遍历权重，只保存不是classifier的权重
     pre_dict = {k: v for k, v in pre_weights.items() if net.state_dict()[k].numel() == v.numel()}
-    missing_keys, unexpected_keys = net.load_state_dict(pre_dict, strict=False)
+    missing_keys, unexpected_keys = net.load_state_dict(pre_dict, strict=False) # 重新载入
 
     # freeze features weights
     for param in net.features.parameters():
@@ -87,7 +90,7 @@ def main():
     optimizer = optim.Adam(params, lr=0.0001)
 
     best_acc = 0.0
-    save_path = './MobileNetV2.pth'
+    save_path = './MobileNetV3.pth'
     train_steps = len(train_loader)
     for epoch in range(epochs):
         # train

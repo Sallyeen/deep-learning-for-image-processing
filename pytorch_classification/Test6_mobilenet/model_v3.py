@@ -5,7 +5,7 @@ from torch import nn, Tensor
 from torch.nn import functional as F
 from functools import partial
 
-
+# 作用是把通道调整为离他最近的8的整数倍；目的是硬件友好，训练速度也会有所提升
 def _make_divisible(ch, divisor=8, min_ch=None):
     """
     This function is taken from the original tf repo.
@@ -32,9 +32,9 @@ class ConvBNActivation(nn.Sequential):
                  norm_layer: Optional[Callable[..., nn.Module]] = None,
                  activation_layer: Optional[Callable[..., nn.Module]] = None):
         padding = (kernel_size - 1) // 2
-        if norm_layer is None:
+        if norm_layer is None: # 如果不传norm_layer，默认设置为BN
             norm_layer = nn.BatchNorm2d
-        if activation_layer is None:
+        if activation_layer is None: # activation默认为relu6
             activation_layer = nn.ReLU6
         super(ConvBNActivation, self).__init__(nn.Conv2d(in_channels=in_planes,
                                                          out_channels=out_planes,
@@ -46,16 +46,17 @@ class ConvBNActivation(nn.Sequential):
                                                norm_layer(out_planes),
                                                activation_layer(inplace=True))
 
-
+# 注意力机制模块
 class SqueezeExcitation(nn.Module):
     def __init__(self, input_c: int, squeeze_factor: int = 4):
+        # squeeze_factor指channel调整的倍数
         super(SqueezeExcitation, self).__init__()
         squeeze_c = _make_divisible(input_c // squeeze_factor, 8)
         self.fc1 = nn.Conv2d(input_c, squeeze_c, 1)
         self.fc2 = nn.Conv2d(squeeze_c, input_c, 1)
 
     def forward(self, x: Tensor) -> Tensor:
-        scale = F.adaptive_avg_pool2d(x, output_size=(1, 1))
+        scale = F.adaptive_avg_pool2d(x, output_size=(1, 1)) # 每个channel所有数据池化为一个数
         scale = self.fc1(scale)
         scale = F.relu(scale, inplace=True)
         scale = self.fc2(scale)
@@ -72,10 +73,10 @@ class InvertedResidualConfig:
                  use_se: bool,
                  activation: str,
                  stride: int,
-                 width_multi: float):
+                 width_multi: float): # 前七个参数对应表格的七个参数，最后一个即alpha
         self.input_c = self.adjust_channels(input_c, width_multi)
         self.kernel = kernel
-        self.expanded_c = self.adjust_channels(expanded_c, width_multi)
+        self.expanded_c = self.adjust_channels(expanded_c, width_multi) # 第一个卷积核通道个数
         self.out_c = self.adjust_channels(out_c, width_multi)
         self.use_se = use_se
         self.use_hs = activation == "HS"  # whether using h-swish activation
@@ -92,15 +93,18 @@ class InvertedResidual(nn.Module):
                  norm_layer: Callable[..., nn.Module]):
         super(InvertedResidual, self).__init__()
 
+        # 判断stride的非法性
         if cnf.stride not in [1, 2]:
             raise ValueError("illegal stride value.")
 
+        # 判断是否使用shortcut
         self.use_res_connect = (cnf.stride == 1 and cnf.input_c == cnf.out_c)
 
         layers: List[nn.Module] = []
+        # 设置激活函数
         activation_layer = nn.Hardswish if cnf.use_hs else nn.ReLU
 
-        # expand
+        # expand，只有一部分bneck才会有升维的conv
         if cnf.expanded_c != cnf.input_c:
             layers.append(ConvBNActivation(cnf.input_c,
                                            cnf.expanded_c,
@@ -117,7 +121,7 @@ class InvertedResidual(nn.Module):
                                        norm_layer=norm_layer,
                                        activation_layer=activation_layer))
 
-        if cnf.use_se:
+        if cnf.use_se: # 判断是否使用se模块
             layers.append(SqueezeExcitation(cnf.expanded_c))
 
         # project
@@ -150,13 +154,15 @@ class MobileNetV3(nn.Module):
 
         if not inverted_residual_setting:
             raise ValueError("The inverted_residual_setting should not be empty.")
-        elif not (isinstance(inverted_residual_setting, List) and
+        elif not (isinstance(inverted_residual_setting, List) and # 要求残差块是个list
                   all([isinstance(s, InvertedResidualConfig) for s in inverted_residual_setting])):
+            # 遍历列表，看是否都是config，若否，则报错
             raise TypeError("The inverted_residual_setting should be List[InvertedResidualConfig]")
 
         if block is None:
             block = InvertedResidual
 
+        # 给BN设置默认值
         if norm_layer is None:
             norm_layer = partial(nn.BatchNorm2d, eps=0.001, momentum=0.01)
 
@@ -171,10 +177,10 @@ class MobileNetV3(nn.Module):
                                        norm_layer=norm_layer,
                                        activation_layer=nn.Hardswish))
         # building inverted residual blocks
-        for cnf in inverted_residual_setting:
+        for cnf in inverted_residual_setting: # 遍历bneck，传入config
             layers.append(block(cnf, norm_layer))
 
-        # building last several layers
+        # building last several layers：卷积、池化、全连接
         lastconv_input_c = inverted_residual_setting[-1].out_c
         lastconv_output_c = 6 * lastconv_input_c
         layers.append(ConvBNActivation(lastconv_input_c,
@@ -235,6 +241,7 @@ def mobilenet_v3_large(num_classes: int = 1000,
 
     reduce_divider = 2 if reduced_tail else 1
 
+    # 是个列表形式
     inverted_residual_setting = [
         # input_c, kernel, expanded_c, out_c, use_se, activation, stride
         bneck_conf(16, 3, 16, 16, False, "RE", 1),

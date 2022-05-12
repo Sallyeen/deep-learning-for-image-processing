@@ -19,7 +19,7 @@ def main(args):
 
     print(args)
     print('Start Tensorboard with "tensorboard --logdir=runs", view at http://localhost:6006/')
-    # 实例化SummaryWriter对象
+    # 实例化SummaryWriter对象，log_dir为tensorboard文件保存地址
     tb_writer = SummaryWriter(log_dir="runs/flower_experiment")
     if os.path.exists("./weights") is False:
         os.makedirs("./weights")
@@ -151,12 +151,12 @@ if __name__ == '__main__':
 
     # 数据集所在根目录
     # http://download.tensorflow.org/example_images/flower_photos.tgz
-    img_root = "/home/wz/my_project/my_github/data_set/flower_data/flower_photos"
+    img_root = "/home/gw00243982/gj/a02_code/data/flower_data/flower_photos"
     parser.add_argument('--data-path', type=str, default=img_root)
 
     # resnet34 官方权重下载地址
     # https://download.pytorch.org/models/resnet34-333f7ec4.pth
-    parser.add_argument('--weights', type=str, default='resNet34.pth',
+    parser.add_argument('--weights', type=str, default='', # default不指定的话即不使用预训练权重
                         help='initial weights path')
     parser.add_argument('--freeze-layers', type=bool, default=False)
     parser.add_argument('--device', default='cuda', help='device id (i.e. 0 or 0,1 or cpu)')

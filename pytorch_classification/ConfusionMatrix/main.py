@@ -10,22 +10,23 @@ from prettytable import PrettyTable
 
 from model import MobileNetV2
 
-
+# 为了拜托对pytorch和tensorflow的依赖，使用numpy数组
 class ConfusionMatrix(object):
     """
     注意，如果显示的图像不全，是matplotlib版本问题
     本例程使用matplotlib-3.2.1(windows and ubuntu)绘制正常
-    需要额外安装prettytable库
+    需要额外安装prettytable库【将输出可以打印为列表】
     """
     def __init__(self, num_classes: int, labels: list):
-        self.matrix = np.zeros((num_classes, num_classes))
+        self.matrix = np.zeros((num_classes, num_classes)) # confusion matrix
         self.num_classes = num_classes
         self.labels = labels
 
     def update(self, preds, labels):
-        for p, t in zip(preds, labels):
+        for p, t in zip(preds, labels): # p, t分别为预测值和真实类别标签
             self.matrix[p, t] += 1
 
+    # 统计计算各项指标
     def summary(self):
         # calculate accuracy
         sum_TP = 0
@@ -36,8 +37,8 @@ class ConfusionMatrix(object):
 
         # precision, recall, specificity
         table = PrettyTable()
-        table.field_names = ["", "Precision", "Recall", "Specificity"]
-        for i in range(self.num_classes):
+        table.field_names = ["", "Precision", "Recall", "Specificity"] # 描述信息
+        for i in range(self.num_classes): # 遍历类别，针对每一类求prs
             TP = self.matrix[i, i]
             FP = np.sum(self.matrix[i, :]) - TP
             FN = np.sum(self.matrix[:, i]) - TP
@@ -48,10 +49,11 @@ class ConfusionMatrix(object):
             table.add_row([self.labels[i], Precision, Recall, Specificity])
         print(table)
 
+    # 绘制混淆矩阵
     def plot(self):
         matrix = self.matrix
         print(matrix)
-        plt.imshow(matrix, cmap=plt.cm.Blues)
+        plt.imshow(matrix, cmap=plt.cm.Blues) # 矩阵展示，颜色从白色到蓝色
 
         # 设置x轴坐标label
         plt.xticks(range(self.num_classes), self.labels, rotation=45)
@@ -73,7 +75,7 @@ class ConfusionMatrix(object):
                          verticalalignment='center',
                          horizontalalignment='center',
                          color="white" if info > thresh else "black")
-        plt.tight_layout()
+        plt.tight_layout() # 使图紧凑
         plt.show()
 
 

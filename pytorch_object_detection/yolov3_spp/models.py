@@ -1,3 +1,7 @@
+"""
+    Define network structure
+"""
+
 from build_utils.layers import *
 from build_utils.parse_config import *
 
@@ -14,15 +18,15 @@ def create_modules(modules_defs: list, img_size):
 
     img_size = [img_size] * 2 if isinstance(img_size, int) else img_size
     # 删除解析cfg列表中的第一个配置(对应[net]的配置)
-    modules_defs.pop(0)  # cfg training hyperparams (unused)
-    output_filters = [3]  # input channels
-    module_list = nn.ModuleList()
+    modules_defs.pop(0)  # cfg training hyperparams (unused)把配置中无用的net移除
+    output_filters = [3]  # input channels 记录每个模块输出矩阵的channel
+    module_list = nn.ModuleList() # 循环添加模块进module_list
     # 统计哪些特征层的输出会被后续的层使用到(可能是特征融合，也可能是拼接)
     routs = []  # list of layers which rout to deeper layers
     yolo_index = -1
 
     # 遍历搭建每个层结构
-    for i, mdef in enumerate(modules_defs):
+    for i, mdef in enumerate(modules_defs): # 对于 索引， 信息
         modules = nn.Sequential()
 
         if mdef["type"] == "convolutional":
@@ -202,6 +206,7 @@ class Darknet(nn.Module):
     """
     YOLOv3 spp object detection model
     """
+    # cfg即为配置文件；imgsize训练时无效，导出onnx时有用；verbose是否需要打印模型每个模块信息
     def __init__(self, cfg, img_size=(416, 416), verbose=False):
         super(Darknet, self).__init__()
         # 这里传入的img_size只在导出ONNX模型时起作用

@@ -244,10 +244,10 @@ if __name__ == "__main__":
     parser.add_argument('--num-classes', type=int, default='80', help='number of classes')
 
     # 数据集的根目录(coco2017根目录)
-    parser.add_argument('--data-path', default='/data/coco2017', help='dataset root')
+    parser.add_argument('--data-path', default='/home/gw00243982/GJ/code/data/coco2017', help='dataset root')
 
     # 训练好的权重文件
-    parser.add_argument('--weights', default='./save_weights/model.pth', type=str, help='training weights')
+    parser.add_argument('--weights', default='/home/gw00243982/GJ/code/01-deep-learning-for-image-processing/fasterrcnn_vgg16.pth', type=str, help='training weights')
 
     # batch size
     parser.add_argument('--batch_size', default=1, type=int, metavar='N',

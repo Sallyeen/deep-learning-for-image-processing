@@ -15,7 +15,7 @@ from draw_box_utils import draw_box
 def main():
     img_size = 512  # 必须是32的整数倍 [416, 512, 608]
     cfg = "cfg/my_yolov3.cfg"  # 改成生成的.cfg文件
-    weights = "weights/yolov3spp-voc-512.pt"  # 改成自己训练好的权重文件
+    weights = "weights/yolov3spp-29.pt"  # 改成自己训练好的权重文件
     json_path = "./data/pascal_voc_classes.json"  # json标签文件
     img_path = "test.jpg"
     assert os.path.exists(cfg), "cfg file {} dose not exist.".format(cfg)
@@ -33,6 +33,7 @@ def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     model = Darknet(cfg, img_size)
+    # torch.nn.DataParallel()
     model.load_state_dict(torch.load(weights, map_location=device)["model"])
     model.to(device)
 

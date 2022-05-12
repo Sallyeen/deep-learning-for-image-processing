@@ -12,14 +12,14 @@ def main():
     model_weight_path = "./resnet34-pre.pth"
     assert os.path.exists(model_weight_path), "file {} does not exist.".format(model_weight_path)
 
-    # option1
+    # option1：直接载入；获得fc层inchannel，改outchannel，替换掉原来的fc
     net = resnet34()
     net.load_state_dict(torch.load(model_weight_path, map_location=device))
     # change fc layer structure
     in_channel = net.fc.in_features
     net.fc = nn.Linear(in_channel, 5)
 
-    # option2
+    # option2：torch.load读取，有序列表形式存储；筛选出fc字段；将筛选出的删除
     # net = resnet34(num_classes=5)
     # pre_weights = torch.load(model_weight_path, map_location=device)
     # del_key = []

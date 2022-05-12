@@ -9,7 +9,7 @@ import numpy as np
 model = AlexNet(num_classes=5)
 # model = resnet34(num_classes=5)
 # load model weights
-model_weight_path = "./AlexNet.pth"  # "resNet34.pth"
+model_weight_path = "/home/gw00243982/GJ/code/01-deep-learning-for-image-processing/pytorch_classification/Test2_alexnet/AlexNet.pth"  # "resNet34.pth"
 model.load_state_dict(torch.load(model_weight_path))
 print(model)
 
