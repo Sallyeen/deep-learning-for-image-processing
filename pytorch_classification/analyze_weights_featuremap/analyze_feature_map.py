@@ -42,7 +42,7 @@ for feature_map in out_put:
     # [C, H, W] -> [H, W, C]
     im = np.transpose(im, [1, 2, 0])
 
-    # show top 12 feature maps
+    # show top 12 feature maps,打印特征矩阵每一层的前12个通道的抽象图片
     plt.figure()
     for i in range(12):
         ax = plt.subplot(3, 4, i+1) # 3行，4列，每个图的索引。第一个特征矩阵的前12通道

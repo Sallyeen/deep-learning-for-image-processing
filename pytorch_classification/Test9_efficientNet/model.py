@@ -84,6 +84,7 @@ class ConvBNActivation(nn.Sequential):
                                                activation_layer())
 
 
+# SE模块构建
 class SqueezeExcitation(nn.Module):
     def __init__(self,
                  input_c: int,   # block input channel
@@ -162,6 +163,7 @@ class InvertedResidual(nn.Module):
                                                   norm_layer=norm_layer,
                                                   activation_layer=activation_layer)})
 
+        # se模块，输入和输出通道数都是expanded_c，input_c存在的意义只是为了方便计算第一次fc下采样倍率
         if cnf.use_se:
             layers.update({"se": SqueezeExcitation(cnf.input_c,
                                                    cnf.expanded_c)})
@@ -186,7 +188,7 @@ class InvertedResidual(nn.Module):
     def forward(self, x: Tensor) -> Tensor:
         result = self.block(x)
         result = self.dropout(result)
-        if self.use_res_connect:
+        if self.use_res_connect: # 判断是否使用残差模块
             result += x
 
         return result

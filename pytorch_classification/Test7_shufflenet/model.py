@@ -7,6 +7,7 @@ import torch.nn as nn
 
 def channel_shuffle(x: Tensor, groups: int) -> Tensor:
 
+    # B, C, H, W, channels_per_group表示每组中channel个数
     batch_size, num_channels, height, width = x.size()
     channels_per_group = num_channels // groups
 
@@ -14,8 +15,8 @@ def channel_shuffle(x: Tensor, groups: int) -> Tensor:
     # [batch_size, num_channels, height, width] -> [batch_size, groups, channels_per_group, height, width]
     x = x.view(batch_size, groups, channels_per_group, height, width)
 
-    x = torch.transpose(x, 1, 2).contiguous()
-
+    x = torch.transpose(x, 1, 2).contiguous() # 只transpose，内存不连续，所以需要contiguous
+    # ----以上两行即可以实现channel_shuffle，先把channel分成不同组，再转置，这样每行都是不同组同一位置的元素
     # flatten
     x = x.view(batch_size, -1, height, width)
 
@@ -30,7 +31,7 @@ class InvertedResidual(nn.Module):
             raise ValueError("illegal stride value.")
         self.stride = stride
 
-        assert output_c % 2 == 0
+        assert output_c % 2 == 0 # 输出通道为两个一样的通道concat，所以必为2的倍数
         branch_features = output_c // 2
         # 当stride为1时，input_channel应该是branch_features的两倍
         # python中 '<<' 是位运算，可理解为计算×2的快速方法

@@ -10,8 +10,13 @@ from tqdm import tqdm
 
 from model import resnet34
 from model import resnet50
-from model_v2 import MobileNetV2
+# from model_v2 import MobileNetV2
 
+from mqbench.prepare_by_platform import prepare_by_platform   # add quant nodes for specific Backend
+from mqbench.prepare_by_platform import BackendType           # contain various Backend, like TensorRT, NNIE, etc.
+from mqbench.utils.state import enable_calibration            # turn on calibration algorithm, determine scale, zero_point, etc.
+from mqbench.utils.state import enable_quantization           # turn on actually quantization, like FP32 -> INT8
+from mqbench.convert_deploy import convert_deploy             # remove quant nodes for deploy
 
 def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -62,7 +67,7 @@ def main():
     
     # 5分类网络初始化
     # net = resnet50(num_classes=5).to(device)
-    net = resnet50().to(device)
+    net = resnet50(num_classes=5).to(device)
     
     # # 全分类网络=初始化
     # net = MobileNetV2().to(device)
@@ -70,7 +75,7 @@ def main():
     # load pretrain weights
     # download url: https://download.pytorch.org/models/resnet34-333f7ec4.pth
     # model_weight_path = "./pth_mobile/mobilenet4.pth"
-    model_weight_path = "./pth_resnet/resnet50-19c8e357.pth"
+    model_weight_path = "../pth_resnet/resnet50.pth"
     assert os.path.exists(model_weight_path), "file {} does not exist.".format(model_weight_path)
     net.load_state_dict(torch.load(model_weight_path, map_location='cpu'))
 
@@ -86,13 +91,6 @@ def main():
     #     )
     # net.to(device)
 
-    # # resnet
-    in_channel = net.fc.in_features
-    net.fc = nn.Linear(in_channel, 5)
-    
-    net.to(device)
-
-
     # define loss function
     loss_function = nn.CrossEntropyLoss()
 
@@ -104,69 +102,66 @@ def main():
     best_acc = 0
     save_path = './pth_resnet/resnet50.pth'
     train_steps = len(train_loader)
-    for epoch in range(epochs):
+    ## --------mebench
+    net.eval()
+    backend = BackendType.Tensorrt
+    net = prepare_by_platform(net, backend)
+    enable_calibration(net)
+    ## --------mebench
+    with torch.no_grad():
+        val_bar = tqdm(validate_loader, file=sys.stdout)
+        for val_data in val_bar:
+            val_images, val_labels = val_data
+            outputs = net(val_images.to(device))
+            # loss = loss_function(outputs, test_labels)
+            predict_y = torch.max(outputs, dim=1)[1]
+            acc += torch.eq(predict_y, val_labels.to(device)).sum().item()
+    val_accurate = acc / val_num
+    print('before training, val_accuracy: %.3f' %
+            (val_accurate))
+    
+    enable_quantization(net)
 
-        # validate
-        net.eval()
-        acc = 0.0  # accumulate accurate number / epoch
-        with torch.no_grad():
-            val_bar = tqdm(validate_loader, file=sys.stdout)
-            for val_data in val_bar:
-                val_images, val_labels = val_data
-                outputs = net(val_images.to(device))
-                # loss = loss_function(outputs, test_labels)
-                predict_y = torch.max(outputs, dim=1)[1]
-                acc += torch.eq(predict_y, val_labels.to(device)).sum().item()
+    with torch.no_grad():
+        val_bar = tqdm(validate_loader, file=sys.stdout)
+        for val_data in val_bar:
+            val_images, val_labels = val_data
+            outputs = net(val_images.to(device))
+            # loss = loss_function(outputs, test_labels)
+            predict_y = torch.max(outputs, dim=1)[1]
+            acc += torch.eq(predict_y, val_labels.to(device)).sum().item()
+    val_accurate = acc / val_num
+    print('before training, val_accuracy: %.3f' %
+            (val_accurate))
 
-                val_bar.desc = "valid epoch[{}/{}]".format(epoch + 1,
-                                                           epochs)
+    # define dummy data for model export.
+    input_shape={'data': [10, 3, 224, 224]}
+    convert_deploy(net, backend, input_shape.to(device)) 
+    # for epoch in range(epochs):
 
-        val_accurate = acc / val_num
+    #     # validate
+    #     net.eval()
+    #     acc = 0.0  # accumulate accurate number / epoch
+    #     with torch.no_grad():
+    #         val_bar = tqdm(validate_loader, file=sys.stdout)
+    #         for val_data in val_bar:
+    #             val_images, val_labels = val_data
+    #             outputs = net(val_images.to(device))
+    #             # loss = loss_function(outputs, test_labels)
+    #             predict_y = torch.max(outputs, dim=1)[1]
+    #             acc += torch.eq(predict_y, val_labels.to(device)).sum().item()
 
-        print('before training, [epoch %d] val_accuracy: %.3f' %
-              (epoch + 1, val_accurate))
+    #             val_bar.desc = "valid epoch[{}/{}]".format(epoch + 1,
+    #                                                        epochs)
 
-        # train
-        net.train()
-        running_loss = 0.0
-        train_bar = tqdm(train_loader, file=sys.stdout)
-        for step, data in enumerate(train_bar):
-            images, labels = data
-            optimizer.zero_grad()
-            logits = net(images.to(device))
-            loss = loss_function(logits, labels.to(device))
-            loss.backward()
-            optimizer.step()
+    #     val_accurate = acc / val_num
 
-            # print statistics
-            running_loss += loss.item()
+    #     print('before training, [epoch %d] val_accuracy: %.3f' %
+    #           (epoch + 1, val_accurate))
 
-            train_bar.desc = "train epoch[{}/{}] loss:{:.3f}".format(epoch + 1,
-                                                                     epochs,
-                                                                     loss)
-
-        # validate
-        net.eval()
-        acc = 0.0  # accumulate accurate number / epoch
-        with torch.no_grad():
-            val_bar = tqdm(validate_loader, file=sys.stdout)
-            for val_data in val_bar:
-                val_images, val_labels = val_data
-                outputs = net(val_images.to(device))
-                # loss = loss_function(outputs, test_labels)
-                predict_y = torch.max(outputs, dim=1)[1]
-                acc += torch.eq(predict_y, val_labels.to(device)).sum().item()
-
-                val_bar.desc = "valid epoch[{}/{}]".format(epoch + 1,
-                                                           epochs)
-
-        val_accurate = acc / val_num
-
-        print('after training, [epoch %d] train_loss: %.3f  val_accuracy: %.3f' %
-              (epoch + 1, running_loss / train_steps, val_accurate))
-        if val_accurate > best_acc:
-            best_acc = val_accurate
-            torch.save(net.state_dict(), save_path)
+    #     if val_accurate > best_acc:
+    #         best_acc = val_accurate
+    #         torch.save(net.state_dict(), save_path)
 
     print('Finished Training')
 
